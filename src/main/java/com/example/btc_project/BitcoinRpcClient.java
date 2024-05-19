@@ -1,14 +1,11 @@
 package com.example.btc_project;
 
 import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -124,9 +121,9 @@ public class BitcoinRpcClient {
             try {
                 BufferedImage qrCode = MatrixToImageWriter.toBufferedImage(qrCodeWriter.encode(bitcoinUri, BarcodeFormat.QR_CODE, 200, 200));
                 ImageIO.write(qrCode, "PNG", new File("QRCode.png"));
-                System.out.println("QR-код успешно сгенерирован!");
+                System.out.println("QR code successfully generated!");
             } catch (com.google.zxing.WriterException e) {
-                System.err.println("Ошибка при создании QR-кода: " + e.getMessage());
+                System.err.println("Error while creating a QR code: " + e.getMessage());
             }
             return newAddress;
         }
