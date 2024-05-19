@@ -21,11 +21,17 @@ public class BtcProjectApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
+		double balance = bitcoinRpcClient.getBalance();
+		DecimalFormat df = new DecimalFormat("0.########");
+
 		Scanner scanner = new Scanner(System.in);
 		System.out.println("Выберите операцию:");
 		System.out.println("1. Получить список адресов");
-		System.out.println("2. Проверить баланс");
+		System.out.println("2. Проверить баланс кошелька");
+		System.out.println("3. Отправить средства");
+		System.out.println("4. Получить новый адрес");
 		int choice = scanner.nextInt();
+		double amount = scanner.nextDouble();
 
 		switch (choice) {
 			case 1:
@@ -36,9 +42,27 @@ public class BtcProjectApplication implements CommandLineRunner {
 				}
 				break;
 			case 2:
-				double balance = bitcoinRpcClient.getBalance();
-				DecimalFormat df = new DecimalFormat("0.########");
 				System.out.println("Balance: " + df.format(balance) + " BTC");
+				break;
+			case 3:
+				System.out.println("Введите адрес получателя:");
+				String toAddress = scanner.next();
+				System.out.println("Введите сумму для отправки:");
+				String formattedAmount = df.format(amount);
+
+				String formattedBalance = df.format(balance);
+				if (formattedAmount.compareTo(formattedBalance) > 0) {
+					System.out.println("Недостаточно средств для выполнения транзакции.");
+					break;
+				}
+
+				String transactionId = bitcoinRpcClient.sendFunds(toAddress, amount);
+				System.out.println("Средства успешно отправлены. ID транзакции: " + transactionId);
+				break;
+			case 4:
+				System.out.println("Введите желаемую сумму:");
+				String newAddress = bitcoinRpcClient.getNewAddressAndGenerateQRCode(amount);
+				System.out.println("Ваш новый адрес: " + newAddress + ". QR-код с указанием суммы " + amount + " BTC был успешно сгенерирован!");
 				break;
 			default:
 				System.out.println("Неверный выбор операции");
