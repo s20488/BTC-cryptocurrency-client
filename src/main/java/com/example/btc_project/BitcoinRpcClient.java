@@ -1,6 +1,5 @@
 package com.example.btc_project;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -58,6 +57,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response);
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             return responseJson.get("result").asDouble();
         }
@@ -76,6 +76,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response);
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             List<Map<String, String>> addresses = new ArrayList<>();
             JsonNode result = responseJson.get("result");
@@ -109,6 +110,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response);
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             return responseJson.get("result").asDouble();
         }
@@ -127,6 +129,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response.code());
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             return responseJson.get("result").textValue();
         }
@@ -145,6 +148,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response);
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             String newAddress = responseJson.get("result").textValue();
 
@@ -174,6 +178,7 @@ public class BitcoinRpcClient {
                 throw new IOException("Unexpected code " + response);
             }
 
+            assert response.body() != null;
             JsonNode responseJson = objectMapper.readTree(response.body().string());
             List<Map<String, Object>> transactions = new ArrayList<>();
             JsonNode result = responseJson.get("result");
@@ -191,6 +196,12 @@ public class BitcoinRpcClient {
                     transactionInfo.put("time", formattedDateTime);
                     transactionInfo.put("amount", amount);
                     transactionInfo.put("category", category);
+
+                    String txid = transaction.get("txid").asText();
+
+                    String status = monitorTransactionStatus(txid);
+                    transactionInfo.put("status", status);
+
                     transactions.add(transactionInfo);
                 }
             }
@@ -198,7 +209,7 @@ public class BitcoinRpcClient {
         }
     }
 
-    public void monitorTransactionConfirmations(String txid) throws IOException, InterruptedException {
+    public String monitorTransactionStatus(String txid) throws IOException {
         final int requiredConfirmations = 6;
         String requestBody = "{\"jsonrpc\":\"1.0\",\"id\":\"curltext\",\"method\":\"gettransaction\",\"params\":[\"" + txid + "\"]}";
         Request request = new Request.Builder()
@@ -208,38 +219,37 @@ public class BitcoinRpcClient {
                 .build();
 
         while (true) {
-            try (Response response = httpClient.newCall(request).execute()) {
+            try {
+                Response response = httpClient.newCall(request).execute();
                 if (!response.isSuccessful()) {
                     throw new IOException("Unexpected code " + response);
                 }
 
+                assert response.body() != null;
                 JsonNode responseJson = objectMapper.readTree(response.body().string());
                 JsonNode result = responseJson.get("result");
                 if (result != null) {
                     int confirmations = result.get("confirmations").asInt();
-                    String status = "";
+                    String status;
                     if (confirmations == 0) {
                         status = "Unconfirmed";
                     } else if (confirmations < requiredConfirmations) {
                         status = "Pending";
-                    } else if (confirmations >= requiredConfirmations && confirmations < 10) {
+                    } else {
                         status = "Confirmed";
                     }
-
-                    System.out.println("Transaction ID: " + txid);
-                    System.out.println("Confirmations: " + confirmations);
-                    System.out.println("Status: " + status);
-
-                    if (confirmations >= requiredConfirmations) {
-                        System.out.println("Transaction has reached the required number of confirmations.");
-                        break;
-                    }
-                } else {
-                    System.out.println("Transaction not found.");
-                    break;
+                    return status;
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            Thread.sleep(60000);
+
+            try {
+                Thread.sleep(60000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
         }
     }
 }

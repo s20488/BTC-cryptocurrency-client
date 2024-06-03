@@ -32,9 +32,7 @@ public class BtcProjectApplication implements CommandLineRunner {
 		System.out.println("3. Send");
 		System.out.println("4. Receive");
 		System.out.println("5. Transaction history");
-		System.out.println("6. Status transaction");
 		int choice = scanner.nextInt();
-		double amount = scanner.nextDouble();
 
 		switch (choice) {
 			case 1:
@@ -53,7 +51,8 @@ public class BtcProjectApplication implements CommandLineRunner {
 				System.out.println("Enter the recipient's address:");
 				String toAddress = scanner.next();
 				System.out.println("Enter the amount to send:");
-				String formattedAmount = df.format(amount);
+				double amountSend = scanner.nextDouble();
+				String formattedAmount = df.format(amountSend);
 
 				String formattedBalance = df.format(balance);
 				if (formattedAmount.compareTo(formattedBalance) > 0) {
@@ -61,27 +60,24 @@ public class BtcProjectApplication implements CommandLineRunner {
 					break;
 				}
 
-				String transactionId = bitcoinRpcClient.sendFunds(toAddress, amount);
+				String transactionId = bitcoinRpcClient.sendFunds(toAddress, amountSend);
 				System.out.println("Funds sent successfully. Transaction ID: " + transactionId);
 				break;
 			case 4:
 				System.out.println("Enter the desired amount:");
-				String newAddress = bitcoinRpcClient.getNewAddressAndGenerateQRCode(amount);
-				System.out.println("Your new address: " + newAddress + ". QR code with the amount " + amount + " BTC was successfully generated!");
+				double amountReceive = scanner.nextDouble();
+				String newAddress = bitcoinRpcClient.getNewAddressAndGenerateQRCode(amountReceive);
+				System.out.println("Your new address: " + newAddress + ". QR code with the amount " + amountReceive + " BTC was successfully generated!");
 				break;
 			case 5:
-				List<Map<String, Object>> transactions = bitcoinRpcClient.getTransactionHistory();
-				for (Map<String, Object> transaction : transactions) {
+				List<Map<String, Object>> transactionsWithStatus = bitcoinRpcClient.getTransactionHistory();
+				for (Map<String, Object> transaction : transactionsWithStatus) {
 					String time = transaction.get("time").toString();
 					double amountTransaction = Double.parseDouble(transaction.get("amount").toString());
 					String category = transaction.get("category").toString();
-					System.out.println("Time: " + time + ", Amount: " + df.format(amountTransaction) + ", Category: " + category);
+					String status = transaction.get("status").toString();
+					System.out.println("Time: " + time + ", Amount: " + df.format(amountTransaction) + ", Category: " + category + ", Status: " + status);
 				}
-				break;
-			case 6:
-				System.out.println("Enter transaction ID to monitor:");
-				String txid = scanner.next();
-				bitcoinRpcClient.monitorTransactionConfirmations(txid);
 				break;
 			default:
 				System.out.println("Incorrect operation selection");
