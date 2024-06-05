@@ -135,7 +135,7 @@ public class BtcProjectBot extends TelegramLongPollingBot {
 	}
 
 	private void sendCommand(Long chatId) {
-		var text = "Введите адрес получателя и сумму через пробел:";
+		var text = "Enter the recipient's address and the amount separated by a space:";
 		var sendMessage = new SendMessage(String.valueOf(chatId), text);
 		try {
 			execute(sendMessage);
@@ -143,7 +143,7 @@ public class BtcProjectBot extends TelegramLongPollingBot {
 			e.printStackTrace();
 		}
 	}
-//
+
 //
 //	private void receiveCommand(Long chatId) {
 //		sendMessage(chatId, "Enter the desired amount:");
