@@ -6,7 +6,6 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -39,34 +37,11 @@ public class BitcoinRpcClient {
 
     public BitcoinRpcClient(@Value("${bitcoin.rpc.url}") String rpcUrl,
                             @Value("${bitcoin.rpc.username}") String rpcUsername,
-                            @Value("${bitcoin.rpc.password}") String rpcPassword) throws IOException {
+                            @Value("${bitcoin.rpc.password}") String rpcPassword) {
         this.httpClient = new OkHttpClient();
         this.rpcUrl = rpcUrl;
         this.credentials = Credentials.basic(rpcUsername, rpcPassword);
         this.objectMapper = new ObjectMapper();
-        loadWallet();
-    }
-
-    private void loadWallet() throws IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("bitcoin-cli", "loadwallet", "testnet");
-        try {
-            Process process = processBuilder.start();
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-                String s;
-                while ((s = stdError.readLine()) != null) {
-                    if (s.contains("Wallet \"testnet\" is already loaded.")) {
-                        return;
-                    }
-                }
-                throw new IOException("Error while loading wallet");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Interrupted while loading wallet", e);
-        }
     }
 
     public double getBalance() throws IOException {
